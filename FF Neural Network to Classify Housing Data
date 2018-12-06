@@ -1,0 +1,198 @@
+from keras.datasets import boston_housing
+import matplotlib.pyplot as plt
+import numpy as np
+from keras.models import Sequential
+from keras.layers import Dense
+from sklearn import preprocessing
+from keras.utils import np_utils
+
+
+(x_train, y_train), (x_test, y_test) = boston_housing.load_data()
+y_train = y_train.reshape(-1,1)
+
+# you are going to define a feedforward network pretty in the same way you defined for classification problems - except no output 
+# function (no activation function on the output layer) and you you need to have the proper cost function for regression. Can
+# you remember what it was?
+
+
+# Data Normalization
+scaler = preprocessing.StandardScaler().fit(x_train)
+x_train_scaled=scaler.transform(x_train)
+scalery = preprocessing.StandardScaler().fit(y_train)
+y_train_scaled=scalery.transform(np.array(y_train))
+
+y_train_scaled = np_utils.to_categorical(y_train_scaled)
+y_test = np_utils.to_categorical(y_test)
+
+
+my_model = Sequential()
+my_model.add(Dense(100, input_dim=13, activation=None))
+my_model.add(Dense(4, activation=None))
+
+
+my_model.compile(loss='mse', optimizer='RMSProp', metrics=['accuracy'])
+
+my_model.fit(x_train_scaled, y_train_scaled, epochs=50, batch_size=200, verbose=2)
+
+# This is SGD without momentum. Add momentum to this code and compare the performance
+import matplotlib.pyplot as plt
+import numpy as np
+
+#this is where we define the function f. this functio nreturns back f(x)
+def non_convex_f(z):
+  return (z**4-3*z**2+2*z-2)
+
+#this function returns back the derivative of the defined the function f at different values x, i.e. it returns back df/d(x) evaluated at x.
+
+def d_non_convex_f(z):
+  return(4*z**3-6*z+2)
+
+alpha = 0.055  #step size (learning rate in context of machine learning)
+beta = 0.9
+n_iterations = 20
+
+colors = plt.cm.jet(np.linspace(0,1,n_iterations))
+
+np.random.seed(seed=1)
+x = 2.     #initial condition
+v_dw = 0.  # Initial Momentum
+trajectory = np.array([x])
+
+
+plt.plot(x,non_convex_f(x),'k.')
+
+precision=0.001
+step_size=1
+iteration=0
+
+
+while (step_size > precision) & (iteration < n_iterations):
+    v_dw = beta * v_dw + (1-beta)*d_non_convex_f(x)
+    new_x = x - alpha*v_dw
+    step_size = abs(new_x - x)
+    x=new_x
+    plt.plot(x,d_non_convex_f(x))
+    iteration=iteration+1
+    trajectory=np.append(trajectory,x)
+
+    
+
+plt.plot(trajectory,non_convex_f(trajectory),'r*')
+plt.quiver(trajectory[:-1], non_convex_f(trajectory)[:-1], trajectory[1:]-trajectory[:-1], non_convex_f(trajectory)[1:]-non_convex_f(trajectory)[:-1], scale_units='xy', angles='xy', scale=1)
+plt.axis([-5, 5, -8, 8])
+xx=np.linspace(-5,5,100)
+yy=non_convex_f(xx)
+plt.plot(xx,yy,'b')
+plt.show()
+
+# add Nesterov Momentum to previous code
+
+# Using the keras function
+import matplotlib.pyplot as plt
+import numpy as np
+from keras.models import Sequential
+from keras.layers import Dense
+from keras.layers import Dropout
+from keras.utils import np_utils
+import time
+
+
+#this is where we define the function f. this functio nreturns back f(x)
+def non_convex_f(z):
+  return (z**4-3*z**2+2*z-2)
+
+#this function returns back the derivative of the defined the function f at different values x, i.e. it returns back df/d(x) evaluated at x.
+
+def d_non_convex_f(z):
+  return(4*z**3-6*z+2)
+
+alpha = 0.01  #step size (learning rate in context of machine learning)
+beta = 0.86
+n_iterations = 20
+
+colors = plt.cm.jet(np.linspace(0,1,n_iterations))
+
+np.random.seed(seed=1)
+x0 = 2.     #initial condition
+v_dw_0 = 0.  # Initial Momentum
+trajectory = np.array([x])
+
+
+plt.plot(x,non_convex_f(x),'k.')
+
+precision=0.001
+step_size=1
+iteration=0
+
+
+# Nesterov algorithm evaluates v a step ahead to better predict momentum
+while (step_size > precision) & (iteration < n_iterations):
+    v_dw_1 = beta * v_dw_0 - alpha*d_non_convex_f(x0 + beta*v_dw_0)
+    x1 = x0 + v_dw_1
+    step_size = abs(x1 - x0)
+    x0=x1
+    v_dw_0=v_dw_1
+    
+    plt.plot(x0, d_non_convex_f(x0))
+    iteration=iteration+1
+    trajectory=np.append(trajectory, x0)
+
+
+plt.plot(trajectory,non_convex_f(trajectory),'r*')
+plt.quiver(trajectory[:-1], non_convex_f(trajectory)[:-1], trajectory[1:]-trajectory[:-1], non_convex_f(trajectory)[1:]-non_convex_f(trajectory)[:-1], scale_units='xy', angles='xy', scale=1)
+plt.axis([-5, 5, -8, 8])
+xx=np.linspace(-5,5,100)
+yy=non_convex_f(xx)
+plt.plot(xx,yy,'b')
+plt.show()
+
+
+
+# Testing which model is best suited for this dataset
+
+from keras.models import Sequential
+from keras.layers import Dense
+from keras.layers import Dropout
+from keras.utils import np_utils
+import time
+
+t0 = time.time()
+SGD_model = Sequential()
+SGD_model.add(Dense(13, input_dim=13, activation='relu'))
+SGD_model.add(Dense(1, kernel_initializer='normal'))
+SGD_model.compile(loss='mean_squared_error', optimizer='sgd', metrics=['accuracy'])
+SGD_model.fit(x_train, y_train, epochs=10, batch_size=10, verbose=0)
+t1 = time.time()
+SGD_time = t1-t0
+
+t0 = time.time()
+adam_model = Sequential()
+adam_model.add(Dense(13, input_dim=13, kernel_initializer='normal', activation='relu'))
+adam_model.add(Dense(1, kernel_initializer='normal'))
+adam_model.compile(loss='mean_squared_error', optimizer='adam',metrics=['accuracy'])
+adam_model.fit(x_train, y_train, epochs=10, batch_size=10, verbose=0)
+t1 = time.time()
+adam_time = t1-t0
+
+t0 = time.time()
+RMS_model = Sequential()
+RMS_model.add(Dense(13, input_dim=13, activation='relu'))
+RMS_model.add(Dense(1, kernel_initializer='normal'))
+RMS_model.compile(loss='mean_squared_error', optimizer='RMSprop',metrics=['accuracy'])
+RMS_model.fit(x_train, y_train, epochs=10, batch_size=10, verbose=0)
+t1 = time.time()
+RMS_time = t1-t0
+
+
+print("SGD: ", SGD_time)
+print("Adam: ", adam_time)
+print("RMS time", RMS_time)
+      
+print()
+print("Loss: MSE    |   Metric: Accuracy")
+SGD_eval = SGD_model.evaluate(x_train,y_train)
+adam_eval = adam_model.evaluate(x_train,y_train)
+RMS_eval = RMS_model.evaluate(x_train,y_train)
+print("SGD: ", SGD_eval)
+print("Adam: ", adam_eval)
+print("RMS time", RMS_eval)
